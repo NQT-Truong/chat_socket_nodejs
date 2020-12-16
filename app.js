@@ -43,14 +43,13 @@ const pustList = (name, id) => {
         });
         isPush = false;
     }
-}
+};
 
 //_________________________________________________//
 
 // socket
 io.on('connection', (socket) => {
     console.log("da ket noi",socket.id)
-
 
     socket.on("Sign", (name) => {
         if (listCli.length === 0) {
@@ -67,12 +66,12 @@ io.on('connection', (socket) => {
     socket.on("mess_from_client", (dt)=>{
         console.log("message_from_client", dt);
         // Them data vao database
-        // const newMess = new Mess();
-        // newMess.content = dt.data
-        // newMess.user = dt.id
-        //
-        // newMess.save();
-        // socket.broadcast.emit("mess_from_server",dt);
+        const newMess = new Mess();
+        newMess.content = dt.data
+        newMess.user = dt.id
+        newMess.roomName = socket.Phong
+
+        newMess.save();
 
         io.sockets.in(socket.Phong).emit("mess_from_server",dt)
     })
@@ -88,28 +87,33 @@ io.on('connection', (socket) => {
 
     socket.on("create_room", (dt) => {
         console.log(dt)
-        socket.join(dt);
-        socket.Phong = dt.socketId;
-        socket.emit("code_room",dt.socketId);
+        socket.join(dt["roomName"]);
+        socket.Phong = dt["roomName"];
+        socket.emit("code_room",dt["roomName"]);
         const listRoom = [];
 
+        console.log(io.sockets.adapter.rooms)
+
+        // io.sockets.adapter.rooms.get(dt?.roomName).forEach((t)=>{
+        //     listRoom.push(t);
+        // })
+        listRoom.push(dt.username)
+        console.log(listRoom)
+
         // console.log(io.sockets.adapter.rooms)
-
-        io.sockets.adapter.rooms.get(dt).forEach((t)=>{
-            listRoom.push(t);
-        })
-
         io.sockets.emit("users_room", listRoom);
     })
 
     socket.on("leave_room",(dt) => {
         socket.leave(dt);
+        socket.Phong = "";
         const listRoom = [];
         // console.log(io.sockets.adapter.rooms.get(dt))
+        // console.log(io.sockets.adapter.rooms)
 
-        io.sockets.adapter.rooms.get(dt)?.forEach((t)=>{
-            listRoom.push(t);
-        })
+        // io.sockets.adapter.rooms.get(dt)?.forEach((t)=>{
+        //     listRoom.push(t);
+        // })
 
         io.sockets.emit("users_room", listRoom);
     })
