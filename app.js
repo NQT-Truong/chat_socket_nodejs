@@ -4,10 +4,10 @@ const app = express();
 const server = require('http').createServer(app);
 const port = 3333;
 const io = require('socket.io')(server);
+const uuid = require("uuid");
 const Mess = require("./modal/mess.modal");
-const User = require("./modal/user.modal")
-
-// const db = Mongoose.connection;
+const User = require("./modal/user.modal");
+const ListUserRoom = require('./modal/listUserRoom.modal')
 
 require('dotenv').config()
 const BodyParser = require("body-parser");
@@ -67,7 +67,6 @@ io.on('connection', (socket) => {
     });
 
     socket.on("mess_from_client", (dt) => {
-        // console.log("message_from_client", dt);
         // Them data vao database
         const newMess = new Mess();
         newMess.content = dt.data
@@ -86,7 +85,7 @@ io.on('connection', (socket) => {
             {
                 new: true
             }).then(() => {
-            console.log("change ok")
+            console.log("change avatar ok")
         })
             .catch(err => {
                 console.log(err)
@@ -97,26 +96,51 @@ io.on('connection', (socket) => {
         socket.join(dt["roomName"]);
         socket.Phong = dt["roomName"];
         socket.emit("code_room", dt["roomName"]);
-        const listRoom = [];
 
-        // console.log(io.sockets.adapter.rooms)
+        ListUserRoom.find(
+            {
+                roomName: dt["roomName"]
+            }, function (err, result) {
+                if (err) {
+                    console.log(err)
+                } else {
+                    if (result.length === 0) {
+                        const ListUserRoom1 = new ListUserRoom();
+                        ListUserRoom1.listUser = dt['user']
+                        ListUserRoom1.roomName = dt['roomName']
+                        ListUserRoom1.listUsername = dt['user']['username']
+                        ListUserRoom1.uuid = uuid.v4()
 
-        // io.sockets.adapter.rooms.get(dt?.roomName).forEach((t)=>{
-        //     listRoom.push(t);
-        // })
-        listRoom.push(dt.username)
-
-        io.sockets.emit("users_room", listRoom);
+                        ListUserRoom1.save();
+                        return
+                    }
+                    if (!(result[0]['listUsername']).includes(dt['user']['username'])) {
+                        ListUserRoom.findOneAndUpdate(
+                            {roomName: dt['roomName']},
+                            {
+                                $set: {
+                                    listUser: [...result[0]['listUser'], dt['user']],
+                                    listUsername: [...result[0]['listUsername'], dt['user']['username']]
+                                }
+                            },
+                            {
+                                new: true
+                            }).then(() => {
+                            console.log("created user ok")
+                        })
+                            .catch(err => {
+                                console.log(err)
+                            })
+                    }
+                }
+            }
+        )
     });
 
     socket.on("leave_room", (dt) => {
         socket.leave(dt);
         socket.Phong = "";
         const listRoom = [];
-
-        // io.sockets.adapter.rooms.get(dt)?.forEach((t)=>{
-        //     listRoom.push(t);
-        // })
 
         io.sockets.emit("users_room", listRoom);
     });

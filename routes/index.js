@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const User = require("../modal/user.modal");
 const Mess = require("../modal/mess.modal");
+const ListUserRoom = require('../modal/listUserRoom.modal');
+
 const {registerValidation, loginValidation} = require("../auth/validation");
 const bcrypt = require("bcryptjs");
 // const jwt = require("jsonwebtoken");
@@ -115,22 +117,17 @@ router.get('/list-user-room', async function (req, res) {
     res.setHeader("Access-Control-Allow-Headers", "content-type");
     res.setHeader("Access-Control-Allow-Methods", "GET");
 
-    Mess.find({}, function (err, result) {
-        if (err) {
-            console.log(err)
-        } else {
-            let data = [];
-            result.forEach((dt) => {
-                if (req.query['roomName'] === dt.roomName) {
-                    if (!data.includes(dt.user)) {
-                        data.push(dt.user);
-                    }
-
-                }
-            })
-            res.send(data);
+    ListUserRoom.find({
+            roomName: req.query['roomName']
+        }, function (err, result) {
+            if (err) {
+                console.log(err)
+            } else {
+                res.send(result[0]['listUser'])
+            }
         }
-    })
+    )
+
 })
 
 // router.get('/test', verify, function (req, res) {
