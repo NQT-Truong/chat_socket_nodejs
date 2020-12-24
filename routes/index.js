@@ -33,6 +33,7 @@ router.post('/register',
         newUser.email = req.body.email
         newUser.password = hashPass
         newUser.uuid = uuid.v4()
+        newUser.avatar = ""
         try {
             const User = await newUser.save()
             res.send(User);
@@ -63,10 +64,12 @@ router.post('/login',
         // const token = jwt.sign({_id: userLogin._id}, process.env.SECRET_TOKEN)
         // res.header("auth-token", token).send(token);
 
+
         res.send({
             "username": userLogin.name,
             "password": userLogin.password,
-            "uuid": userLogin.uuid
+            "uuid": userLogin.uuid,
+            "avatar": userLogin.avatar
         })
 
         // Validate user
@@ -92,7 +95,6 @@ router.get('/tinnhan',
 
                 result.forEach((dt) => {
                     if (req.query['roomName'] === dt.roomName) {
-                        console.log(dt)
                         data.push(
                             {
                                 content: dt.content,
