@@ -123,7 +123,9 @@ router.get('/list-user-room', async function (req, res) {
             if (err) {
                 console.log(err)
             } else {
-                res.send(result[0]['listUser'])
+                if (result[0]) {
+                    res.send(result[0]['listUser'])
+                }
             }
         }
     )
@@ -133,6 +135,5 @@ router.get('/list-user-room', async function (req, res) {
 // router.get('/test', verify, function (req, res) {
 //     res.send("Chào mừng bạn đến với website của mình. Chúc bạn một ngày vui vẻ")
 // })
-
 
 module.exports = router
