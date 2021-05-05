@@ -9,12 +9,23 @@ const Mess = require("./modal/mess.modal");
 const User = require("./modal/user.modal");
 const ListUserRoom = require('./modal/listUserRoom.modal')
 
+// MQTT config
+const options = {
+    clientId: "mqttjs01",
+    username: "dave",
+    password: "123123",
+    clean: true
+};
+const mqtt = require('mqtt');
+const client = mqtt.connect('mqtt://18.139.208.99:1883', options)
+//______________________________________//
+
 require('dotenv').config()
 const BodyParser = require("body-parser");
 const cors = require("cors");
 
 const corsOption = {
-    origin: "http://localhost:3333",
+    origin: "http://18.139.208.99:3333",
     optionsSuccessStatus: 200
 }
 
@@ -41,7 +52,7 @@ const pustList = (dt, id) => {
         listCli.push({
             name: dt['username'],
             id: id,
-            avatar: dt['avatar']
+            uuid: dt['uuid']
         });
         isPush = false;
     }
@@ -49,16 +60,30 @@ const pustList = (dt, id) => {
 
 //_________________________________________________//
 
+// MQTT connect
+client.on('connect', () => {
+    console.log("connected MQTT");
+})
+//____________________________________________________//
+
 // socket
 io.on('connection', (socket) => {
     console.log("da ket noi", socket.id)
 
+    // Door Security App
+    socket.on("control_device", (data) => {
+        client.publish("control_device", data);
+    })
+
+    //____________________________//
+
+    // Chat App
     socket.on("Sign", (data) => {
         if (listCli.length === 0) {
             listCli.push({
                 name: data['username'],
                 id: socket.id,
-                avatar: data['avatar']
+                uuid: data['uuid']
             });
         } else {
             pustList(data, socket.id)
@@ -161,6 +186,16 @@ io.on('connection', (socket) => {
             }
         })
         socket.broadcast.emit("list_online", listCli);
+    });
+    //__________________________________//
+
+    // Stream
+    socket.on("callUser", (data) => {
+        io.sockets.in(data["userToCall"]).emit('hey', {signal: data["signalData"], from: data.from});
+    });
+
+    socket.on("acceptCall", (data) => {
+        io.sockets.in(data["to"]).emit('callAccepted', data.signal);
     });
 });
 
